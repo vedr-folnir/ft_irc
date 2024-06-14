@@ -68,7 +68,10 @@ class Server
 	    std::string channelModes;
 
 		void ToSend(int fd, std::string msg);
+		void ToSendServer(std::string msg);
         void Ping(int fd, const std::vector<std::string>& parts);
+		
+		void connecting(Client& client);
 
         void Join( int fd, const std::vector<std::string>& parts );
         void Msg( int fd, const std::vector<std::string>& parts );
@@ -78,6 +81,8 @@ class Server
         void Invite( int fd, const std::vector<std::string>& parts );
         void Topic( int fd, const std::vector<std::string>& parts );
         void Mode( int fd, const std::vector<std::string>& parts );
+		//faire une commande pass pls 
+
         //std::string clearBuff(std::string buff, int start);
 
 };

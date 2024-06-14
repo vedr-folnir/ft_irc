@@ -126,6 +126,15 @@ void	Server::CloseFds() {
 }
 
 
+void Server::connecting(Client& client){ // see if all info are ok to connect 
+	if (!client.GetNickname().empty() && !client.GetUsername().empty() && client.GetPass() == PassWord){
+		client.SetReg(true);
+		sendWelcomeMessages(Client& cli) 
+	}
+	else
+		client.SetReg(false);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// SIGNAL ///
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,17 +245,9 @@ void Server::GetInfoCli(Client &cli, std::string buff) {
 	std::string user = buff.substr(buff.find(":",buff.find("USER") + 5) + 1);
 	buff = remove_unprintable(buff);
 
-	if (nick.size() > 9 || !already_used_nick(nick)) {
-		ClearClients(cli.GetFd());
-	}
-	else if (PassWord != pass) {
-		ClearClients(cli.GetFd()); 
-	}
-	else {
-		cli.SetNickname(nick);
-        cli.SetUsername(user);
-	}
-
+	cli.SetPass(pass);
+	cli.SetNickname(nick);
+    cli.SetUsername(user);
 	/*std::cout << GRE << "-*- pass =" << pass << "-*-"<< WHI <<std::endl;
 	std::cout << RED <<  "-*- nick =" << nick << "-*-"<< WHI << std::endl;
 	std::cout << YEL << "-*- user =" << user << "-*-"<< WHI << std::endl;*/
@@ -292,18 +293,13 @@ void Server::initClient(Client &cli, int incofd) {
             }
         }
     }
-
     // Extraire le nickname des données reçues
     std::string nickname = extractNickname(data);
-    if (nickname.empty()) 
-	{
-        std::cerr << "Nickname not provided by client" << std::endl;
-        close(incofd);
-        return;
-    }
-
-    cli.SetNickname(nickname);
-    std::cout << "Client <" << incofd << "> set nickname: " << nickname << std::endl;
+	/*if (nickname.empty()){ // we already do it in getinfoclient
+    	cli.SetNickname(nickname);
+    	std::cout << "Client <" << incofd << "> set nickname: " << nickname << std::endl;
+	}*/
+	connecting(cli);
 }
 
 void Server::sendWelcomeMessages(Client& cli) 
@@ -348,10 +344,13 @@ void Server::AcceptNewClient()
 	NewPoll.events = POLLIN; //-> set the event to POLLIN for reading data
 	NewPoll.revents = 0; //-> set the revents to 0
     initClient(cli, incofd); // Initialize client and read nickname
+	/*
 	if (cli.GetNickname().empty()) 
 	{
-        return; // Client disconnected or error occurred
+		cli.SetReg(false);
+        //return; // Client disconnected or error occurred
     }
+	*/
 	cli.setIpAdd(inet_ntoa((cliadd.sin_addr))); //-> convert the ip address to string and set it
 	clients.push_back(cli); //-> add the client to the vector of clients
 	fds.push_back(NewPoll); //-> add the client socket to the pollfd
@@ -364,7 +363,7 @@ void Server::AcceptNewClient()
 	recv(cli.GetFd(), buffer, sizeof(buffer) - 1, 0);
 	std::cout << "new conection msg *-*" << buffer << "*-*" <<std::endl;
 
-	sendWelcomeMessages(cli);
+	//sendWelcomeMessages(cli);
 }
 
 void Server::SerSocket()

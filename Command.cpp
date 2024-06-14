@@ -4,16 +4,26 @@
 void Server::User(int fd, const std::vector<std::string>& parts) {
     
     Client& client = getClientByFd(fd); // Use the Server pointer to access Server methods
-    std::cout << "USER: " << client.GetUsername() << " set for client <" << fd << "> is currently changing his username" << std::endl;
-    
+    std::stringstream message;
+    if (!client.GetUsername().empty())
+    {
+        message << 462 << "ERR_ALREADYREGISTERED :username alreadu registered";
+        send(fd, message.c_str(), message.size(), 0);
+        return;
+    }
+    //std::cout << "USER: " << client.GetUsername() << " set for client <" << fd << "> is currently changing his username" << std::endl;
     if (parts.size() < 2) {
         std::cerr << "USER: Not enough parameters" << std::endl;
         return;
     }
-
-    std::string username = parts[1];
-    client.SetUsername(username); // Update the client's username
+    for (size_t i = 1; i < parts.size(); i++)
+    {
+        message << parts[i] << " ";
+        
+    }
+    client.SetUsername(username.str()); // Update the client's username
     std::cout << "USER: " << username << " set for client <" << fd << ">" << std::endl;
+    connecting(client);
 }  
 
 
@@ -70,6 +80,15 @@ void Server::ToSend(int fd, std::string msg)
     //trow
 }
 
+void Server::ToSendServer(std::string msg)
+{
+    std::cout << "SEND-*-:" << msg << "-*-END" << std::endl;
+    for (size_t i = 0; i < clients.size(); i++)
+    {
+        send(clients[i].GetFd(), msg.c_str(), msg.size(),0);
+    }
+}
+
 void Server::Ping(int fd, const std::vector<std::string>& parts)
 {
     std::string PONG;
@@ -85,17 +104,41 @@ void Server::Ping(int fd, const std::vector<std::string>& parts)
     ToSend(fd, PONG);
 }
 
-void Server::Nick(int fd, const std::vector<std::string>& parts) {
+void Server::Nick(int fd, const std::vector<std::string>& parts) { // take the base of the nickname not the whole command prompt
     Client& client = getClientByFd(fd); // Use the Server pointer to access Server methods
-    std::cout << "NICK: " << client.GetNickname() << " set for client <" << fd << "> is currently changing his nickname" << std::endl;
-
-    if (parts.size() < 2) {
-        std::cerr << "NICK: Not enough parameters" << std::endl;
+    //std::cout << "NICK: " << client.GetNickname() << " set for client <" << fd << "> is currently changing his nickname" << std::endl;
+    std::stringstream newNick;
+    std::stringstream message; // message to send
+    if  (parts.size() == 0){
+        //std::cerr << "NICK: Not enough parameters" << std::endl;
+        message << 431 << "ERR_NONICKNAMEGIVEN " << newNick << " :nickname not found";
+        sent(fd, message.str().c_str(), message.str().size(), 0);
         return;
     }
-    std::string newNick = parts[1];
-    client.SetNickname(newNick); // Update the client's nickname
-    std::cout << "NICK: " << newNick << " set for client <" << fd << ">" << std::endl;
+    for (size_t i = 0; i < parts.size(); i++)
+        newNick << parts[i];
+    if (newNick == client.GetNickname()){
+        message << 447 << "ERR_NONICKCHANGE " << newNick << " :same nickname";
+        sent(fd, message.str().c_str(), message.str().size(), 0);
+        return;
+    }    
+    for (size_t i = 0; i < clients.size(); i++){
+        if (clients[i].GetNickname() == newNick){
+            message << 433 << "ERR_NICKNAMEINUSE " << newNick << " :nickname already used";
+            sent(fd, message.str().c_str(), message.str().size(), 0);
+            return;
+        }
+    }
+    if (client.GetNickname().empty())
+        message << fd << " changed hiss nickname to " << newNick;
+    else
+        message << client.GetNickname() << " changed hiss nickname to " << newNick;
+    client.SetNickname(newNick.str());
+
+    ToSendServer(message);
+    if (!client.GetReg())
+        connecting(client);
+    
 }
 
 /*

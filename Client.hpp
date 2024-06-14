@@ -20,19 +20,21 @@ class Client {
         std::string Nickname;
         std::string Username;
         std::string _pass;
-
+        bool reg;
     public:
         Client(){}; 
         int GetFd(){return Fd;}
         std::string GetUsername() {return Username;}
         std::string GetNickname() {return Nickname;}
         std::string GetPass() {return _pass;}
-
+		bool GetReg() {return reg;}
+		
         void SetUsername(std::string newUserName) {Username = newUserName;}
         void SetNickname(std::string newNickName){Nickname = newNickName;}
         void SetPass(std::string newPass){_pass = newPass;}
         void SetFd(int fd){Fd = fd;}
         void setIpAdd(std::string ipadd){IPadd = ipadd;}
+		void SetReg(bool state) {reg = state;}
         
         const std::string getIpAdd();
 
