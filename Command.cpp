@@ -7,7 +7,7 @@ void Server::User(int fd, const std::vector<std::string>& parts) {
     std::stringstream message;
     if (!client.GetUsername().empty())
     {
-        message << 462 << "ERR_ALREADYREGISTERED :username alreadu registered";
+        message << 462 << " ERR_ALREADYREGISTERED :username already registered";
         send(fd, message.c_str(), message.size(), 0);
         return;
     }
@@ -104,28 +104,31 @@ void Server::Ping(int fd, const std::vector<std::string>& parts)
     ToSend(fd, PONG);
 }
 
-void Server::Nick(int fd, const std::vector<std::string>& parts) { // take the base of the nickname not the whole command prompt
+void Server::Nick(int fd, const std::vector<std::string>& parts) {
     Client& client = getClientByFd(fd); // Use the Server pointer to access Server methods
     //std::cout << "NICK: " << client.GetNickname() << " set for client <" << fd << "> is currently changing his nickname" << std::endl;
     std::stringstream newNick;
     std::stringstream message; // message to send
-    if  (parts.size() == 0){
+    if  (parts.size() < 1){
         //std::cerr << "NICK: Not enough parameters" << std::endl;
         message << 431 << "ERR_NONICKNAMEGIVEN " << newNick << " :nickname not found";
-        sent(fd, message.str().c_str(), message.str().size(), 0);
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSend(fd, message.str());
         return;
     }
-    for (size_t i = 0; i < parts.size(); i++)
+    for (size_t i = 1; i < parts.size(); i++)
         newNick << parts[i];
     if (newNick == client.GetNickname()){
         message << 447 << "ERR_NONICKCHANGE " << newNick << " :same nickname";
-        sent(fd, message.str().c_str(), message.str().size(), 0);
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSend(fd, message.str());
         return;
     }    
     for (size_t i = 0; i < clients.size(); i++){
         if (clients[i].GetNickname() == newNick){
             message << 433 << "ERR_NICKNAMEINUSE " << newNick << " :nickname already used";
-            sent(fd, message.str().c_str(), message.str().size(), 0);
+            //sent(fd, message.str().c_str(), message.str().size(), 0);
+            ToSend(fd, message.str());
             return;
         }
     }
@@ -200,6 +203,30 @@ void Server::Nick(int fd, const std::vector<std::string>& parts) { // take the b
            PASS secretpasswordhere
 */
 
+void Server:Pass(int fd, const std::vector<std::string>& parts){
+    Client& client = getClientByFd(fd); // Use the Server pointer to access Server methods
+    std::stringstream message;
+    std::stringstream newPass;
+    if (client.GetReg())
+    {
+        message << 462 << " ERR_ALREADYREGISTERED :client already registered";
+        //send(fd, message.c_str(), message.size(), 0);
+        ToSend(fd, message.str());
+        return;
+    }
+    if  (parts.size() < 1){
+        //std::cerr << "NICK: Not enough parameters" << std::endl;
+        message << 461 << " ERR_NEEDMOREPARAMS PASS :passs not found";
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSend(fd, message.str());
+        return;
+    }
+    for (size_t i = 1; i < parts.size(); i++)
+        newPass << parts[i];
+    client.SetPass(newPass.str());
+    connecting(client);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// COMMANDS FOR REGISTERED CLIENTS ///
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,7 +250,14 @@ JOIN
 */
 
 void Server::Join(int fd, const std::vector<std::string>& parts) { //http://abcdrfc.free.fr/rfc-vf/rfc1459.html#421 
-    
+    if (!getClientByFd(fd).GetReg())
+    {
+        std::stringstream message;
+        message << 451 << "ERR_NOTREGISTERED :client not register";
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSent(fd, message.str());
+        return;
+    }
     std::cout << "hereee join" << std::endl;
     std::string NameChanel;
     bool chanelExiste = false;
@@ -322,7 +356,14 @@ void Server::Join(int fd, const std::vector<std::string>& parts) { //http://abcd
 void Server::Msg(int fd, const std::vector<std::string>& parts) {
     (void)fd;
     (void)parts;
-
+    if (!getClientByFd(fd).GetReg())
+    {
+        std::stringstream message;
+        message << 451 << "ERR_NOTREGISTERED :client not register";
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSent(fd, message.str());
+        return;
+    }
     std::string message = "< " + getClientByFd(fd).GetNickname() + " >";
     for (size_t i = 2; i < parts.size(); i++)
     {
@@ -397,7 +438,14 @@ PRIVMSG #*.edu :NSFNet is undergoing work, expect interruptions
 void Server::Kick(int fd, const std::vector<std::string>& parts) {
     (void)fd;
     (void)parts;
-    
+    if (!getClientByFd(fd).GetReg())
+    {
+        std::stringstream message;
+        message << 451 << "ERR_NOTREGISTERED :client not register";
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSent(fd,message.str());
+        return;
+    }
 }
 /*
 4.2.8 Kick command
@@ -440,6 +488,14 @@ void Server::addClientToChannel(std::string nickname, std::string channel) {
 }
 */
 void Server::Invite(int fd, const std::vector<std::string>& parts) {
+    if (!getClientByFd(fd).GetReg())
+    {
+        std::stringstream message;
+        message << 451 << "ERR_NOTREGISTERED :client not register";
+        //sent(fd, message.str().c_str(), message.str().size(), 0);
+        ToSent(fd, message.str());
+        return;
+    }
     std::string nickname = parts[1];
     std::string channel = parts[2];
     //channel = clearBuff(channel, 0); // a faire attention au ^M 

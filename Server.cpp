@@ -191,7 +191,7 @@ void Server::ReceiveNewData(int fd)
 
 bool Server::ClientCommand(int fd, std::string command) 
 {
-	t_f f[] = { &Server::Ping, &Server::Nick, &Server::User, &Server::Join, &Server::Msg, &Server::Kick, &Server::Invite, &Server::Topic, &Server::Mode};
+	t_f f[] = { &Server::Ping, &Server::Nick, &Server::User, &Server::Join, &Server::Msg, &Server::Kick, &Server::Invite, &Server::Topic, &Server::Mode, &Server::Pass};
 	command = remove_unprintable(command);
     std::vector<std::string> parts = split(command, ' ');
 
@@ -204,7 +204,7 @@ bool Server::ClientCommand(int fd, std::string command)
 	{
 		std::cout << "here extracted_cmd*-*" << parts[i] << "*-*" << std::endl;
 	}
-    std::string ask[10] = {"PING", "NICK", "USER", "JOIN", "PRIVMSG", "KICK", "INVITE", "TOPIC", "MODE"};
+    std::string ask[1] = {"PING", "NICK", "USER", "JOIN", "PRIVMSG", "KICK", "INVITE", "TOPIC", "MODE", "PASS"};
     for (int i = 0; i < 10; i++) 
 	{
 
@@ -255,7 +255,7 @@ void Server::GetInfoCli(Client &cli, std::string buff) {
 
 void Server::initClient(Client &cli, int incofd) {
     cli.SetFd(incofd); //-> set the client file descriptor
-    cli.SetUsername(intToString(cli.GetFd()));
+    cli.SetUsername(""); // keep empty to assure not reg
 
     char buffer[1024];
 
@@ -294,7 +294,7 @@ void Server::initClient(Client &cli, int incofd) {
         }
     }
     // Extraire le nickname des données reçues
-    std::string nickname = extractNickname(data);
+    //std::string nickname = extractNickname(data);
 	/*if (nickname.empty()){ // we already do it in getinfoclient
     	cli.SetNickname(nickname);
     	std::cout << "Client <" << incofd << "> set nickname: " << nickname << std::endl;
