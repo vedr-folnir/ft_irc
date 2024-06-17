@@ -127,9 +127,11 @@ void	Server::CloseFds() {
 
 
 void Server::connecting(Client& client){ // see if all info are ok to connect 
+	std::cout << YEL << "name :" << client.GetUsername() << "\tnick :" << client.GetNickname() << "\tpass :" << client.GetPass() << WHI << std::endl;
+	std::cout << CYA << "\t\t\t" << PassWord << WHI << std::endl;
 	if (!client.GetNickname().empty() && !client.GetUsername().empty() && client.GetPass() == PassWord){
 		client.SetReg(true);
-		sendWelcomeMessages(Client& cli) 
+		sendWelcomeMessages(client);
 	}
 	else
 		client.SetReg(false);
@@ -204,12 +206,12 @@ bool Server::ClientCommand(int fd, std::string command)
 	{
 		std::cout << "here extracted_cmd*-*" << parts[i] << "*-*" << std::endl;
 	}
-    std::string ask[1] = {"PING", "NICK", "USER", "JOIN", "PRIVMSG", "KICK", "INVITE", "TOPIC", "MODE", "PASS"};
+    std::string ask[10] = {"PING", "NICK", "USER", "JOIN", "PRIVMSG", "KICK", "INVITE", "TOPIC", "MODE", "PASS"};
     for (int i = 0; i < 10; i++) 
 	{
-
         if (extractedCommand == ask[i])
 		{
+			
             (this->*f[i])(fd, parts); // Correct usage without the third parameter
             return true;
 		}
@@ -277,7 +279,7 @@ void Server::initClient(Client &cli, int incofd) {
             close(incofd);
             return;
         } 
-		else if (data.size() > 0)
+		else if (data.size() > 4)
 		{
 			GetInfoCli(cli, data);
             if (errno == EWOULDBLOCK || errno == EAGAIN) 
@@ -292,6 +294,8 @@ void Server::initClient(Client &cli, int incofd) {
                 return;
             }
         }
+		else
+			break;
     }
     // Extraire le nickname des données reçues
     //std::string nickname = extractNickname(data);
@@ -399,7 +403,7 @@ void Server::ServerInit(char **argv)
 	this->Port = atoi(argv[1]);
 	if (this->Port < 1024 || 49152 < this->Port )
 		throw(std::logic_error("Wrong Port number [1024 <= Port <= 49152]"));
-	
+	this->PassWord = argv[2];
 	SerSocket(); //-> create the server socket
 
 	std::cout << GRE << "Server <" << SerSocketFd << "> Connected" << WHI << std::endl;

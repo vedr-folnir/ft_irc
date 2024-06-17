@@ -5,10 +5,11 @@ void Server::User(int fd, const std::vector<std::string>& parts) {
     
     Client& client = getClientByFd(fd); // Use the Server pointer to access Server methods
     std::stringstream message;
+    std::cout << YEL << "username: " << client.GetUsername() << WHI << std::endl;
     if (!client.GetUsername().empty())
     {
         message << 462 << " ERR_ALREADYREGISTERED :username already registered";
-        send(fd, message.c_str(), message.size(), 0);
+        send(fd, message.str().c_str(), message.str().size(), 0);
         return;
     }
     //std::cout << "USER: " << client.GetUsername() << " set for client <" << fd << "> is currently changing his username" << std::endl;
@@ -21,8 +22,8 @@ void Server::User(int fd, const std::vector<std::string>& parts) {
         message << parts[i] << " ";
         
     }
-    client.SetUsername(username.str()); // Update the client's username
-    std::cout << "USER: " << username << " set for client <" << fd << ">" << std::endl;
+    client.SetUsername(message.str()); // Update the client's username
+    std::cout << "USER: " << message.str() << " set for client <" << fd << ">" << std::endl;
     connecting(client);
 }  
 
@@ -116,29 +117,32 @@ void Server::Nick(int fd, const std::vector<std::string>& parts) {
         ToSend(fd, message.str());
         return;
     }
-    for (size_t i = 1; i < parts.size(); i++)
+    for (size_t i = 1; i < parts.size(); i++){
         newNick << parts[i];
-    if (newNick == client.GetNickname()){
-        message << 447 << "ERR_NONICKCHANGE " << newNick << " :same nickname";
+        if (i + 1 < parts.size())
+           newNick << " ";
+    }
+    if (newNick.str() == client.GetNickname()){
+        message << 447 << " ERR_NONICKCHANGE " << newNick.str() << " :same nickname"  << std::endl;
         //sent(fd, message.str().c_str(), message.str().size(), 0);
         ToSend(fd, message.str());
         return;
     }    
     for (size_t i = 0; i < clients.size(); i++){
-        if (clients[i].GetNickname() == newNick){
-            message << 433 << "ERR_NICKNAMEINUSE " << newNick << " :nickname already used";
+        if (clients[i].GetNickname() == newNick.str()){
+            message << 433 << " ERR_NICKNAMEINUSE " << newNick.str() << " :nickname already used" << std::endl;
             //sent(fd, message.str().c_str(), message.str().size(), 0);
             ToSend(fd, message.str());
             return;
         }
     }
     if (client.GetNickname().empty())
-        message << fd << " changed hiss nickname to " << newNick;
+        message << fd << " changed his nickname to " << newNick.str();
     else
-        message << client.GetNickname() << " changed hiss nickname to " << newNick;
+        message << client.GetNickname() << " changed his nickname to " << newNick.str();
     client.SetNickname(newNick.str());
-
-    ToSendServer(message);
+    message << std::endl;
+    ToSendServer(message.str());
     if (!client.GetReg())
         connecting(client);
     
@@ -203,7 +207,7 @@ void Server::Nick(int fd, const std::vector<std::string>& parts) {
            PASS secretpasswordhere
 */
 
-void Server:Pass(int fd, const std::vector<std::string>& parts){
+void Server::Pass(int fd, const std::vector<std::string>& parts){
     Client& client = getClientByFd(fd); // Use the Server pointer to access Server methods
     std::stringstream message;
     std::stringstream newPass;
@@ -255,7 +259,7 @@ void Server::Join(int fd, const std::vector<std::string>& parts) { //http://abcd
         std::stringstream message;
         message << 451 << "ERR_NOTREGISTERED :client not register";
         //sent(fd, message.str().c_str(), message.str().size(), 0);
-        ToSent(fd, message.str());
+        ToSend(fd, message.str());
         return;
     }
     std::cout << "hereee join" << std::endl;
@@ -359,9 +363,9 @@ void Server::Msg(int fd, const std::vector<std::string>& parts) {
     if (!getClientByFd(fd).GetReg())
     {
         std::stringstream message;
-        message << 451 << "ERR_NOTREGISTERED :client not register";
+        message << 451 << " ERR_NOTREGISTERED :client not register" << std::endl;
         //sent(fd, message.str().c_str(), message.str().size(), 0);
-        ToSent(fd, message.str());
+        ToSend(fd, message.str());
         return;
     }
     std::string message = "< " + getClientByFd(fd).GetNickname() + " >";
@@ -441,9 +445,9 @@ void Server::Kick(int fd, const std::vector<std::string>& parts) {
     if (!getClientByFd(fd).GetReg())
     {
         std::stringstream message;
-        message << 451 << "ERR_NOTREGISTERED :client not register";
+        message << 451 << "ERR_NOTREGISTERED :client not register" << std::endl;
         //sent(fd, message.str().c_str(), message.str().size(), 0);
-        ToSent(fd,message.str());
+        ToSend(fd,message.str());
         return;
     }
 }
@@ -491,9 +495,9 @@ void Server::Invite(int fd, const std::vector<std::string>& parts) {
     if (!getClientByFd(fd).GetReg())
     {
         std::stringstream message;
-        message << 451 << "ERR_NOTREGISTERED :client not register";
+        message << 451 << "ERR_NOTREGISTERED :client not register" << std::endl;
         //sent(fd, message.str().c_str(), message.str().size(), 0);
-        ToSent(fd, message.str());
+        ToSend(fd, message.str());
         return;
     }
     std::string nickname = parts[1];
