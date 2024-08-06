@@ -2,16 +2,16 @@
 NAME		= ircserv
 	
 CC			= c++
-FLAGS		= -Wall -Wextra -Werror -std=c++98
+FLAGS		= -Wall -Wextra -Werror -std=c++98 -g3
 RM			= rm -rf
 
 OBJDIR = obj
 
-FILES		= main Client Server chanel Command
+FILES		= main Client Server Channel Command rpl Utils Mode
 
 SRC			= $(FILES:=.cpp)
 OBJ			= $(addprefix $(OBJDIR)/, $(FILES:=.o))
-HEADER		= Client.hpp Server.hpp chanel.hpp
+HEADER		= Client.hpp Server.hpp Channel.hpp rpl.hpp
 #OPTS = -g
 
 all: $(NAME)

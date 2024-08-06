@@ -16,26 +16,35 @@
 class Client {
     private:
         int Fd;
-        std::string IPadd;
-        std::string Nickname;
-        std::string Username;
+        std::string _IPadd;
+        std::string _nickname;
+        std::string _username;
         std::string _pass;
-        bool reg;
-    public:
-        Client(){}; 
-        int GetFd(){return Fd;}
-        std::string GetUsername() {return Username;}
-        std::string GetNickname() {return Nickname;}
-        std::string GetPass() {return _pass;}
-		bool GetReg() {return reg;}
-		
-        void SetUsername(std::string newUserName) {Username = newUserName;}
-        void SetNickname(std::string newNickName){Nickname = newNickName;}
-        void SetPass(std::string newPass){_pass = newPass;}
-        void SetFd(int fd){Fd = fd;}
-        void setIpAdd(std::string ipadd){IPadd = ipadd;}
-		void SetReg(bool state) {reg = state;}
-        
-        const std::string getIpAdd();
+        std::string _modes;
+        std::string _command;
+        bool        _reg;
+        bool        _refuse;
 
+    public:
+        Client();
+        
+        int         GetFd();
+        std::string GetUsername();
+        std::string GetNickname();
+        std::string GetPass();
+        std::string GetCommand();
+		bool        GetReg();
+        bool        getRefuse();
+        bool        fullCommand();
+        void        addCommand(std::string com);
+        void        delCommand();
+        void setRefuse(bool rep);
+        void SetUsername(std::string newUserName);
+        void SetNickname(std::string newNickName);
+        void SetPass(std::string newPass);
+        void SetFd(int fd);
+        void setIpAdd(std::string ipadd);
+		void SetReg(bool state);
+		void SetModes(std::string modes);
+        const std::string getIpAdd();
 };
